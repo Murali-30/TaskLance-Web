@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #6C47FF;
+  --color-secondary: #FF6B35;
+  --color-background: #0D0D14;
+  --color-surface: #16161F;
+  --color-surface-2: #1E1E2E;
+  --color-text-primary: #F2F2F7;
+  --color-text-muted: #7A7A9A;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-border-color: #2A2A3D;
+
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+:root.light {
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F1F5F9;
+  --color-text-primary: #0F172A;
+  --color-text-muted: #64748B;
+  --color-border-color: #E2E8F0;
+}
+
+:root.dark {
+  --color-background: #0D0D14;
+  --color-surface: #16161F;
+  --color-surface-2: #1E1E2E;
+  --color-text-primary: #F2F2F7;
+  --color-text-muted: #7A7A9A;
+  --color-border-color: #2A2A3D;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+/* Custom utilities */
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+  }
+  
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-secondary;
+  }
+  
+  .glass-card {
+    @apply bg-surface/80 backdrop-blur-md border border-border-color rounded-2xl shadow-lg;
+  }
+}
