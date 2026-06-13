@@ -13,6 +13,9 @@ export async function createDriver(): Promise<WebDriver> {
 
   const options = new chrome.Options();
   // options.addArguments('--headless=new'); // Removed to open Chrome visibly as requested
+  if (process.env.CI) {
+    options.addArguments('--headless=new');
+  }
   options.addArguments('--no-sandbox');
   options.addArguments('--disable-dev-shm-usage');
   options.addArguments('--disable-gpu');

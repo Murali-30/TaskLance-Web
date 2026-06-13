@@ -1,0 +1,45 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Start Dev Server
+      run: npm run dev &
+      
+    - name: Wait for server
+      run: npx wait-on http://localhost:5173 -t 30000
+
+    - name: Run E2E Tests
+      run: npm run test:web
+      env:
+        CI: true
+
+    - name: Generate Excel Report
+      run: node generate-excel.cjs
+      if: always()
+
+    - name: Upload Test Artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-artifacts
+        path: tests/e2e/artifacts/
+        retention-days: 7
