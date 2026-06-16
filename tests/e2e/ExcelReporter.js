@@ -33,6 +33,10 @@ export default class ExcelReporter {
 
     results.testResults.forEach(testSuite => {
       const category = this.getCategory(testSuite.testFilePath);
+      if (!stats[category]) {
+        stats[category] = { total: 0, passed: 0, failed: 0 };
+        detailRowsByCategory[category] = [];
+      }
       
       testSuite.testResults.forEach(testCase => {
         const cleanErrors = (testCase.failureMessages.join('\n') || '').replace(/\0/g, '');
