@@ -16,7 +16,12 @@ export default class ExcelReporter {
   }
 
   async onRunComplete(contexts, results) {
-    const detailRows = [];
+    const detailRowsByCategory = {
+      'Unit Test': [],
+      'UI_UX Test': [],
+      'Validation Test': [],
+      'Functional Test': []
+    };
     
     let totalTests = 0;
     let passedTests = 0;
@@ -24,7 +29,7 @@ export default class ExcelReporter {
 
     const stats = {
       'Unit Test': { total: 0, passed: 0, failed: 0 },
-      'UI/UX Test': { total: 0, passed: 0, failed: 0 },
+      'UI_UX Test': { total: 0, passed: 0, failed: 0 },
       'Validation Test': { total: 0, passed: 0, failed: 0 },
       'Functional Test': { total: 0, passed: 0, failed: 0 }
     };
@@ -50,8 +55,7 @@ export default class ExcelReporter {
           }
         }
         
-        detailRows.push({
-          Category: category,
+        detailRowsByCategory[category].push({
           Suite: path.basename(testSuite.testFilePath),
           TestName: testCase.fullName,
           Status: testCase.status,
@@ -61,7 +65,8 @@ export default class ExcelReporter {
       });
     });
 
-    if (detailRows.length === 0) {
+    const hasAnyTest = Object.values(detailRowsByCategory).some(rows => rows.length > 0);
+    if (!hasAnyTest) {
       console.log('No test results to write to Excel.');
       return;
     }
@@ -79,7 +84,7 @@ export default class ExcelReporter {
       {},
       { Metric: "--- BREAKDOWN BY CATEGORY ---", Value: "" },
       { Metric: "Unit Tests", Value: `${stats['Unit Test'].passed}/${stats['Unit Test'].total} Passed` },
-      { Metric: "UI/UX Tests", Value: `${stats['UI/UX Test'].passed}/${stats['UI/UX Test'].total} Passed` },
+      { Metric: "UI/UX Tests", Value: `${stats['UI_UX Test'].passed}/${stats['UI_UX Test'].total} Passed` },
       { Metric: "Validation Tests", Value: `${stats['Validation Test'].passed}/${stats['Validation Test'].total} Passed` },
       { Metric: "Functional Tests", Value: `${stats['Functional Test'].passed}/${stats['Functional Test'].total} Passed` }
     ];
@@ -87,19 +92,23 @@ export default class ExcelReporter {
     const summarySheet = xlsx.utils.json_to_sheet(summaryRows);
     summarySheet['!cols'] = [{ wch: 30 }, { wch: 30 }];
 
-    const detailSheet = xlsx.utils.json_to_sheet(detailRows);
-    detailSheet['!cols'] = [
-      { wch: 20 }, // Category
-      { wch: 30 }, // Suite
-      { wch: 50 }, // TestName
-      { wch: 10 }, // Status
-      { wch: 15 }, // DurationMs
-      { wch: 80 }  // Errors
-    ];
-
     const workbook = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(workbook, summarySheet, "Summary Report");
-    xlsx.utils.book_append_sheet(workbook, detailSheet, "Detailed Results");
+
+    // Create a sheet for each category
+    for (const [catName, rows] of Object.entries(detailRowsByCategory)) {
+      if (rows.length > 0) {
+        const sheet = xlsx.utils.json_to_sheet(rows);
+        sheet['!cols'] = [
+          { wch: 30 }, // Suite
+          { wch: 50 }, // TestName
+          { wch: 10 }, // Status
+          { wch: 15 }, // DurationMs
+          { wch: 80 }  // Errors
+        ];
+        xlsx.utils.book_append_sheet(workbook, sheet, catName);
+      }
+    }
 
     const outputPath = path.resolve(process.cwd(), 'tests/e2e/artifacts/TaskLance_Final_Test_Report.xlsx');
     
