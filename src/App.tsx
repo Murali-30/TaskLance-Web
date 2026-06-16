@@ -1,4 +1,6 @@
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+const Router = import.meta.env.DEV ? BrowserRouter : HashRouter;
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';

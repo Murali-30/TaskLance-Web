@@ -6,7 +6,7 @@ import chromedriver from 'chromedriver';
 import { Builder, By, until, WebDriver } from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome.js';
 
-export const BASE_URL = 'http://localhost:5173/#';
+export const BASE_URL = 'http://localhost:5173';
 
 export async function createDriver(): Promise<WebDriver> {
   const serviceBuilder = new chrome.ServiceBuilder(chromedriver.path);
