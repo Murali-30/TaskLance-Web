@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useAuth } from '../../context/AuthContext';
+import type { Role } from '../../context/AuthContext';
 import { Mail, Lock } from 'lucide-react';
 
 export default function Login() {
@@ -27,7 +28,7 @@ export default function Login() {
           id: email.split('@')[0],
           name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
           email,
-          role: email.includes('client') || email.includes('charlie') ? 'client' : 'freelancer',
+          role: (email.includes('client') || email.includes('charlie') ? 'client' : 'freelancer') as Role,
           avatar: `https://i.pravatar.cc/150?u=${email}`
         };
         login(testUser);
@@ -110,16 +111,6 @@ export default function Login() {
         </Button>
       </form>
 
-      <div className="mt-6 flex items-center justify-between">
-        <span className="w-1/5 border-b border-border-color lg:w-1/4"></span>
-        <span className="text-xs text-center text-text-muted uppercase">or login with</span>
-        <span className="w-1/5 border-b border-border-color lg:w-1/4"></span>
-      </div>
-
-      <div className="flex gap-4 mt-6">
-        <Button variant="outline" className="w-full bg-surface">Google</Button>
-        <Button variant="outline" className="w-full bg-surface">GitHub</Button>
-      </div>
 
       <p className="text-center mt-8 text-sm text-text-muted">
         Don't have an account?{' '}

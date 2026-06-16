@@ -4,7 +4,7 @@ import { useToast } from '../../context/ToastContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { MapPin, Globe, Calendar, Star, Edit2, Check, Link, Camera, Loader2 } from 'lucide-react';
+import { MapPin, Globe, Calendar, Star, Edit2, Check, Camera, Loader2 } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
@@ -15,9 +15,8 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || 'Jane Doe');
   const [tagline, setTagline] = useState(role === 'freelancer' ? 'Full Stack Developer & UI Designer' : 'Product Manager at TechCorp');
-  
-  const [githubConnected, setGithubConnected] = useState(false);
-  const [linkedinConnected, setLinkedinConnected] = useState(true);
+  const [bio, setBio] = useState(user?.bio || 'Passionate creator with 5+ years of experience building scalable web applications and intuitive user interfaces. I love turning complex problems into elegant solutions.');
+  const [skills, setSkills] = useState<string[]>(user?.skills || ['React', 'TypeScript', 'Node.js', 'Figma', 'UI/UX Design', 'Tailwind CSS']);
   
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -25,11 +24,11 @@ export default function Profile() {
   const handleSave = async () => {
     setIsEditing(false);
     if (updateUser && user?.id) {
-      updateUser({ name });
+      updateUser({ name, tagline, bio, skills });
       try {
-        await updateDoc(doc(db, 'users', user.id), { name });
+        await updateDoc(doc(db, 'users', user.id), { name, tagline, bio, skills });
       } catch (err) {
-        console.error('Failed to update name in Firestore:', err);
+        console.error('Failed to update profile in Firestore:', err);
       }
     }
     addToast('Profile updated successfully!', 'success');
@@ -76,15 +75,6 @@ export default function Profile() {
     }
   };
 
-  const toggleConnection = (platform: 'github' | 'linkedin') => {
-    if (platform === 'github') {
-      setGithubConnected(!githubConnected);
-      addToast(`GitHub ${!githubConnected ? 'connected' : 'disconnected'}.`, 'info');
-    } else {
-      setLinkedinConnected(!linkedinConnected);
-      addToast(`LinkedIn ${!linkedinConnected ? 'connected' : 'disconnected'}.`, 'info');
-    }
-  };
 
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto w-full">
@@ -184,38 +174,7 @@ export default function Profile() {
               )}
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Linked Accounts</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Link className="w-5 h-5 text-text-muted" />
-                  <span className="font-medium">GitHub</span>
-                </div>
-                {githubConnected ? (
-                  <Button variant="ghost" size="sm" onClick={() => toggleConnection('github')}>Disconnect</Button>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={() => toggleConnection('github')}>Connect</Button>
-                )}
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Link className="w-5 h-5 text-[#0A66C2]" />
-                  <span className="font-medium">LinkedIn</span>
-                </div>
-                {linkedinConnected ? (
-                  <Button variant="ghost" size="sm" onClick={() => toggleConnection('linkedin')}>Disconnect</Button>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={() => toggleConnection('linkedin')}>Connect</Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
         </div>
-
         <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader>
@@ -225,11 +184,12 @@ export default function Profile() {
               {isEditing ? (
                 <textarea 
                   className="w-full h-32 rounded-xl border border-border-color bg-surface px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all resize-none"
-                  defaultValue="Passionate creator with 5+ years of experience building scalable web applications and intuitive user interfaces. I love turning complex problems into elegant solutions."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
                 />
               ) : (
-                <p className="text-text-primary leading-relaxed">
-                  Passionate creator with 5+ years of experience building scalable web applications and intuitive user interfaces. I love turning complex problems into elegant solutions.
+                <p className="text-text-primary leading-relaxed whitespace-pre-wrap">
+                  {bio}
                 </p>
               )}
             </CardContent>
@@ -243,12 +203,34 @@ export default function Profile() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {['React', 'TypeScript', 'Node.js', 'Figma', 'UI/UX Design', 'Tailwind CSS'].map(skill => (
+                  {skills.map(skill => (
                     <span key={skill} className="px-3 py-1.5 rounded-lg bg-surface-2 text-sm font-medium border border-border-color flex items-center gap-2">
                       {skill}
-                      {isEditing && <button className="text-text-muted hover:text-error">&times;</button>}
+                      {isEditing && (
+                        <button 
+                          className="text-text-muted hover:text-error"
+                          onClick={() => setSkills(skills.filter(s => s !== skill))}
+                        >&times;</button>
+                      )}
                     </span>
                   ))}
+                  {isEditing && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Input 
+                        placeholder="New skill..." 
+                        className="w-40 h-8"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const newSkill = e.currentTarget.value.trim();
+                            if (newSkill && !skills.includes(newSkill)) {
+                              setSkills([...skills, newSkill]);
+                              e.currentTarget.value = '';
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -1,21 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { motion } from 'framer-motion';
 import { Plus, MoreHorizontal } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { getProjectTasks, updateTaskStatus, createTask } from '../../lib/db';
 
 interface Task {
   id: string;
   title: string;
   columnId: string;
 }
-
-const initialTasks: Task[] = [
-  { id: 't1', title: 'Design Database Schema', columnId: 'backlog' },
-  { id: 't2', title: 'Setup Authentication', columnId: 'in-progress' },
-  { id: 't3', title: 'Create UI Components', columnId: 'in-progress' },
-  { id: 't4', title: 'Write API Documentation', columnId: 'review' },
-  { id: 't5', title: 'Initial Project Setup', columnId: 'done' },
-];
 
 const columns = [
   { id: 'backlog', title: 'Backlog' },
@@ -25,9 +19,26 @@ const columns = [
 ];
 
 export default function ProjectKanban() {
+  const { id: projectId } = useParams<{ id: string }>();
   const { addToast } = useToast();
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (projectId) {
+      loadTasks();
+    }
+  }, [projectId]);
+
+  const loadTasks = async () => {
+    try {
+      const dbTasks = await getProjectTasks(projectId!);
+      setTasks(dbTasks);
+    } catch (e) {
+      console.error(e);
+      addToast('Failed to load tasks', 'error');
+    }
+  };
 
   const handleDragStart = (taskId: string) => {
     setDraggedTaskId(taskId);
@@ -37,26 +48,39 @@ export default function ProjectKanban() {
     e.preventDefault();
   };
 
-  const handleDrop = (e: React.DragEvent, columnId: string) => {
+  const handleDrop = async (e: React.DragEvent, columnId: string) => {
     e.preventDefault();
     if (!draggedTaskId) return;
 
+    // Optimistic update
     setTasks(prev => 
       prev.map(task => 
         task.id === draggedTaskId ? { ...task, columnId } : task
       )
     );
+    
+    const tid = draggedTaskId;
     setDraggedTaskId(null);
+
+    try {
+      await updateTaskStatus(tid, columnId);
+    } catch (e) {
+      console.error(e);
+      addToast('Failed to update task status', 'error');
+      loadTasks(); // Revert on failure
+    }
   };
 
-  const handleAddTask = (columnId: string) => {
-    const newTask = {
-      id: `t${Date.now()}`,
-      title: 'New Added Task',
-      columnId
-    };
-    setTasks([...tasks, newTask]);
-    addToast('Task added successfully.', 'success');
+  const handleAddTask = async (columnId: string) => {
+    if (!projectId) return;
+    try {
+      await createTask(projectId, 'New Added Task', columnId);
+      addToast('Task added successfully.', 'success');
+      loadTasks();
+    } catch (e) {
+      console.error(e);
+      addToast('Failed to add task', 'error');
+    }
   };
 
   return (

@@ -6,14 +6,31 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { useToast } from '../../context/ToastContext';
 
-export default function NotificationSettings() {
-  const { addToast } = useToast();
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [pushNotifs, setPushNotifs] = useState(true);
-  const [marketingNotifs, setMarketingNotifs] = useState(false);
+import { useAuth } from '../../context/AuthContext';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
-  const handleSave = () => {
-    addToast('Notification preferences updated.', 'success');
+export default function NotificationSettings() {
+  const { user, updateUser } = useAuth();
+  const { addToast } = useToast();
+  const [emailNotifs, setEmailNotifs] = useState(user?.emailNotifs ?? true);
+  const [pushNotifs, setPushNotifs] = useState(user?.pushNotifs ?? true);
+  const [marketingNotifs, setMarketingNotifs] = useState(user?.marketingNotifs ?? false);
+
+  const handleSave = async () => {
+    if (updateUser && user?.id) {
+      updateUser({ emailNotifs, pushNotifs, marketingNotifs });
+      try {
+        await updateDoc(doc(db, 'users', user.id), {
+          emailNotifs,
+          pushNotifs,
+          marketingNotifs,
+        });
+        addToast('Notification preferences updated.', 'success');
+      } catch (err) {
+        addToast('Failed to update preferences.', 'error');
+      }
+    }
   };
 
   return (

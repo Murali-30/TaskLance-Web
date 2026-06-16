@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Search, ChevronDown, Mail, MessageCircle } from 'lucide-react';
+import { Search, ChevronDown, Mail } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 
 const faqs = [
@@ -14,6 +14,11 @@ const faqs = [
 export default function HelpSupport() {
   const [searchQuery, setSearchQuery] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const filteredFaqs = faqs.filter(faq => 
+    faq.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    faq.a.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto w-full">
@@ -35,7 +40,7 @@ export default function HelpSupport() {
           <CardContent className="p-6">
             <h2 className="text-xl font-display font-semibold mb-6">Frequently Asked Questions</h2>
             <div className="space-y-4">
-              {faqs.map((faq, idx) => (
+              {filteredFaqs.length > 0 ? filteredFaqs.map((faq, idx) => (
                 <div key={idx} className="border border-border-color rounded-xl overflow-hidden">
                   <button 
                     onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
@@ -50,22 +55,17 @@ export default function HelpSupport() {
                     </div>
                   )}
                 </div>
-              ))}
+              )) : (
+                <div className="text-center text-text-muted py-8">
+                  No results found for "{searchQuery}"
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
         <div className="space-y-6">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 text-primary">
-                <MessageCircle className="w-6 h-6" />
-              </div>
-              <h3 className="font-semibold mb-2">Live Chat</h3>
-              <p className="text-sm text-text-muted mb-4">Chat with our support team in real-time.</p>
-              <Button className="w-full">Start Chat</Button>
-            </CardContent>
-          </Card>
+
           
           <Card>
             <CardContent className="p-6 text-center">
@@ -74,7 +74,9 @@ export default function HelpSupport() {
               </div>
               <h3 className="font-semibold mb-2">Email Us</h3>
               <p className="text-sm text-text-muted mb-4">Send us an email and we'll reply within 24h.</p>
-              <Button variant="outline" className="w-full">Contact Support</Button>
+              <a href="mailto:support@tasklance.com" className="block w-full">
+                <Button variant="outline" className="w-full">Contact Support</Button>
+              </a>
             </CardContent>
           </Card>
         </div>

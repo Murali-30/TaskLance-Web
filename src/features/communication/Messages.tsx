@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-import { getChats, getMessages, sendMessage, getUser } from '../../lib/db';
+import { getChats, getMessages, sendMessage, getUser, uploadChatAttachment } from '../../lib/db';
 import { Input } from '../../components/ui/Input';
-import { Search, Phone, Video, MoreVertical, Paperclip, Mic, Send, Image as ImageIcon, MessageCircle, Loader2 } from 'lucide-react';
+import { Search, MoreVertical, Paperclip, Mic, Send, Image as ImageIcon, MessageCircle, Loader2 } from 'lucide-react';
 
 export default function Messages() {
   const { user } = useAuth();
@@ -107,10 +107,24 @@ export default function Messages() {
   const handleAttachment = () => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        addToast(`Attached: ${file.name}`, 'info');
+      if (file && activeChatId && user) {
+        addToast(`Uploading ${file.name}...`, 'info');
+        try {
+          const url = await uploadChatAttachment(file, activeChatId);
+          await sendMessage(activeChatId, user.id, `File attached: ${url}`);
+          addToast('File uploaded successfully', 'success');
+          // Optimistically add to UI
+          setMessages(prev => [...prev, {
+            id: `temp-${Date.now()}`,
+            senderId: user.id,
+            text: `File attached: ${url}`,
+            timestamp: Date.now()
+          }]);
+        } catch (err) {
+          addToast('Failed to upload file', 'error');
+        }
       }
     };
     input.click();
@@ -183,8 +197,6 @@ export default function Messages() {
                 </div>
               </div>
               <div className="flex items-center gap-4 text-text-muted">
-                <button className="hover:text-primary transition-colors"><Phone className="w-5 h-5" /></button>
-                <button className="hover:text-primary transition-colors"><Video className="w-5 h-5" /></button>
                 <button className="hover:text-primary transition-colors"><MoreVertical className="w-5 h-5" /></button>
               </div>
             </div>

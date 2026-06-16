@@ -1,5 +1,6 @@
 import { collection, doc, getDocs, getDoc, setDoc, addDoc, query, where, updateDoc, onSnapshot, arrayUnion } from 'firebase/firestore';
-import { db } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from './firebase';
 
 export async function getProjects() {
   const projectsRef = collection(db, 'projects');
@@ -262,9 +263,46 @@ export async function updateDeliverableStatus(deliverableId: string, status: str
   });
 }
 
+// Kanban Tasks
+export async function createTask(projectId: string, title: string, columnId: string, assignee: string = 'unassigned') {
+  const tasksRef = collection(db, 'tasks');
+  await addDoc(tasksRef, {
+    projectId,
+    title,
+    columnId,
+    assignee,
+    createdAt: Date.now()
+  });
+}
+
+export async function getProjectTasks(projectId: string) {
+  const tasksRef = collection(db, 'tasks');
+  const q = query(tasksRef, where('projectId', '==', projectId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+}
+
+export async function updateTaskStatus(taskId: string, columnId: string) {
+  const taskRef = doc(db, 'tasks', taskId);
+  await updateDoc(taskRef, { columnId });
+}
+
+// File Uploads
+export async function uploadChatAttachment(file: File, conversationId: string): Promise<string> {
+  const storageRef = ref(storage, `chat_attachments/${conversationId}/${Date.now()}_${file.name}`);
+  await uploadBytes(storageRef, file);
+  return await getDownloadURL(storageRef);
+}
+
+export async function uploadDeliverableFile(file: File, projectId: string): Promise<string> {
+  const storageRef = ref(storage, `deliverables/${projectId}/${Date.now()}_${file.name}`);
+  await uploadBytes(storageRef, file);
+  return await getDownloadURL(storageRef);
+}
+
 // Global cleanup hook for E2E tests (only available in development)
 if (import.meta.env.DEV) {
-  (window as any).__cleanupTestData = async (testEmailPrefix: string) => {
+  (window as any).__cleanupTestData = async () => {
     try {
       const { deleteDoc } = await import('firebase/firestore');
       

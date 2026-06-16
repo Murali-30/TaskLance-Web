@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-import { getProject, getProposals, createProposal, acceptProposal, createChat, getProjectInvoices, createInvoice, payInvoice, createDeliverable, getProjectDeliverables, updateDeliverableStatus } from '../../lib/db';
+import { getProject, getProposals, createProposal, acceptProposal, createChat, getProjectInvoices, createInvoice, payInvoice, createDeliverable, getProjectDeliverables, updateDeliverableStatus, uploadDeliverableFile } from '../../lib/db';
 import { Button } from '../../components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Calendar, DollarSign, Users, FileText, Activity, Send, CheckCircle, Loader2, UploadCloud } from 'lucide-react';
@@ -140,18 +140,21 @@ export default function ProjectDetails() {
 
     setIsSubmittingDeliverable(true);
     try {
-      // Simulate file upload delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const fileUrls: string[] = [];
+      for (const file of deliverableFiles) {
+        addToast(`Uploading ${file.name}...`, 'info');
+        const url = await uploadDeliverableFile(file, id);
+        fileUrls.push(url);
+      }
       
-      const fileNames = deliverableFiles.map(f => f.name);
-      const delivId = await createDeliverable(id, user.id, deliverableDescription, fileNames);
+      const delivId = await createDeliverable(id, user.id, deliverableDescription, fileUrls);
       
       const newDeliv = {
         id: delivId,
         projectId: id,
         freelancerId: user.id,
         description: deliverableDescription,
-        files: fileNames,
+        files: fileUrls,
         status: 'pending_review',
         createdAt: Date.now()
       };

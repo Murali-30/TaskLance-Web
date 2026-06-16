@@ -9,6 +9,12 @@ interface User {
   email: string;
   role: Role;
   avatar?: string;
+  bio?: string;
+  tagline?: string;
+  skills?: string[];
+  pushNotifs?: boolean;
+  emailNotifs?: boolean;
+  marketingNotifs?: boolean;
 }
 
 interface AuthContextType {
@@ -53,12 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
               const userData = userDoc.exists() ? userDoc.data() : {};
               
-              const appUser = {
+              const appUser: User = {
                 id: firebaseUser.uid,
                 name: userData.name || firebaseUser.displayName || 'User',
                 email: firebaseUser.email || '',
                 role: (userData.role || 'freelancer') as Role,
-                avatar: userData.avatar || `https://i.pravatar.cc/150?u=${firebaseUser.email}`
+                avatar: userData.avatar || `https://i.pravatar.cc/150?u=${firebaseUser.email}`,
+                bio: userData.bio,
+                tagline: userData.tagline,
+                skills: userData.skills,
+                pushNotifs: userData.pushNotifs !== false,
+                emailNotifs: userData.emailNotifs !== false,
+                marketingNotifs: userData.marketingNotifs === true,
               };
               
               setUser(appUser);
