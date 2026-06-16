@@ -101,7 +101,7 @@ export default class ExcelReporter {
     xlsx.utils.book_append_sheet(workbook, summarySheet, "Summary Report");
     xlsx.utils.book_append_sheet(workbook, detailSheet, "Detailed Results");
 
-    const outputPath = path.resolve(process.cwd(), 'tests/e2e/artifacts/test-report.xlsx');
+    const outputPath = path.resolve(process.cwd(), 'tests/e2e/artifacts/TaskLance_Final_Test_Report.xlsx');
     
     // Ensure the artifacts directory exists
     const fs = await import('fs');
