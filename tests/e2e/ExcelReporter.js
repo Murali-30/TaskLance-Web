@@ -9,18 +9,16 @@ export default class ExcelReporter {
 
   getCategory(filePath) {
     const filename = path.basename(filePath).toLowerCase();
-    if (filePath.includes('unit') || filePath.includes('components')) return 'Unit Test';
-    if (filename.includes('uiux')) return 'UI/UX Test';
-    if (filename.includes('validation')) return 'Validation Test';
-    return 'Functional Test';
+    if (filePath.includes('unit') || filePath.includes('components') || filename.includes('uiux')) return 'UI-UX & Unit Tests';
+    if (filename.includes('validation')) return 'Validation Tests';
+    return 'Functional Tests';
   }
 
   async onRunComplete(contexts, results) {
     const detailRowsByCategory = {
-      'Unit Test': [],
-      'UI_UX Test': [],
-      'Validation Test': [],
-      'Functional Test': []
+      'UI-UX & Unit Tests': [],
+      'Validation Tests': [],
+      'Functional Tests': []
     };
     
     let totalTests = 0;
@@ -28,10 +26,9 @@ export default class ExcelReporter {
     let failedTests = 0;
 
     const stats = {
-      'Unit Test': { total: 0, passed: 0, failed: 0 },
-      'UI_UX Test': { total: 0, passed: 0, failed: 0 },
-      'Validation Test': { total: 0, passed: 0, failed: 0 },
-      'Functional Test': { total: 0, passed: 0, failed: 0 }
+      'UI-UX & Unit Tests': { total: 0, passed: 0, failed: 0 },
+      'Validation Tests': { total: 0, passed: 0, failed: 0 },
+      'Functional Tests': { total: 0, passed: 0, failed: 0 }
     };
 
     results.testResults.forEach(testSuite => {
@@ -56,11 +53,9 @@ export default class ExcelReporter {
         }
         
         detailRowsByCategory[category].push({
-          Suite: path.basename(testSuite.testFilePath),
-          TestName: testCase.fullName,
-          Status: testCase.status,
-          DurationMs: testCase.duration || 0,
-          Errors: cleanErrors
+          'Test Case Name': testCase.fullName,
+          'Status': testCase.status.toUpperCase(),
+          'Duration': `${testCase.duration || 0} ms`
         });
       });
     });
@@ -83,10 +78,9 @@ export default class ExcelReporter {
       { Metric: "Deployable Status", Value: isDeployable },
       {},
       { Metric: "--- BREAKDOWN BY CATEGORY ---", Value: "" },
-      { Metric: "Unit Tests", Value: `${stats['Unit Test'].passed}/${stats['Unit Test'].total} Passed` },
-      { Metric: "UI/UX Tests", Value: `${stats['UI_UX Test'].passed}/${stats['UI_UX Test'].total} Passed` },
-      { Metric: "Validation Tests", Value: `${stats['Validation Test'].passed}/${stats['Validation Test'].total} Passed` },
-      { Metric: "Functional Tests", Value: `${stats['Functional Test'].passed}/${stats['Functional Test'].total} Passed` }
+      { Metric: "UI-UX & Unit Tests", Value: `${stats['UI-UX & Unit Tests'].passed}/${stats['UI-UX & Unit Tests'].total} Passed` },
+      { Metric: "Validation Tests", Value: `${stats['Validation Tests'].passed}/${stats['Validation Tests'].total} Passed` },
+      { Metric: "Functional Tests", Value: `${stats['Functional Tests'].passed}/${stats['Functional Tests'].total} Passed` }
     ];
 
     const summarySheet = xlsx.utils.json_to_sheet(summaryRows);
@@ -100,11 +94,9 @@ export default class ExcelReporter {
       if (rows.length > 0) {
         const sheet = xlsx.utils.json_to_sheet(rows);
         sheet['!cols'] = [
-          { wch: 30 }, // Suite
-          { wch: 50 }, // TestName
-          { wch: 10 }, // Status
-          { wch: 15 }, // DurationMs
-          { wch: 80 }  // Errors
+          { wch: 80 }, // Test Case Name
+          { wch: 15 }, // Status
+          { wch: 15 }  // Duration
         ];
         xlsx.utils.book_append_sheet(workbook, sheet, catName);
       }
