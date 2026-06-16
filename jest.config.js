@@ -11,7 +11,8 @@ export default {
       outputPath: 'tests/e2e/artifacts/test-report.html',
       includeFailureMsg: true,
       includeSuiteFailure: true
-    }]
+    }],
+    '<rootDir>/tests/e2e/ExcelReporter.js'
   ],
   transform: {
     '^.+\\.tsx?$': [
