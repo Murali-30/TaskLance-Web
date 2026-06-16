@@ -78,9 +78,6 @@ export function itPOM(name: string, driverFn: () => WebDriver, testFn: () => Pro
       await testFn();
     } catch (error) {
       const driver = driverFn();
-      if (driver) {
-        await takeScreenshot(driver, name);
-      }
       throw error; // Rethrow to let Jest fail the test
     }
   }, 120000);
