@@ -1,4 +1,4 @@
-import * as xlsx from 'xlsx';
+import ExcelJS from 'exceljs';
 import path from 'path';
 
 export default class ExcelReporter {
@@ -41,8 +41,6 @@ export default class ExcelReporter {
       testSuite.testResults.forEach(testCase => {
         const cleanErrors = (testCase.failureMessages.join('\n') || '').replace(/\0/g, '');
         
-        // Skip skipped/pending tests if you only want to count ran tests, or count them.
-        // We will count passed and failed.
         if (testCase.status === 'passed' || testCase.status === 'failed') {
           totalTests++;
           stats[category].total++;
@@ -73,36 +71,40 @@ export default class ExcelReporter {
     const passRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
     const isDeployable = failedTests === 0 && totalTests > 0 ? "READY FOR DEPLOYMENT ✅" : "REQUIRES FIXES ❌";
 
-    // Summary Sheet Data
-    const summaryRows = [
-      { Metric: "Total Tests Run", Value: totalTests },
-      { Metric: "Passed Tests", Value: passedTests },
-      { Metric: "Failed Tests", Value: failedTests },
-      { Metric: "Pass Rate", Value: `${passRate}%` },
-      { Metric: "Deployable Status", Value: isDeployable },
-      {},
-      { Metric: "--- BREAKDOWN BY CATEGORY ---", Value: "" },
-      { Metric: "UI-UX & Unit Tests", Value: `${stats['UI-UX & Unit Tests'].passed}/${stats['UI-UX & Unit Tests'].total} Passed` },
-      { Metric: "Validation Tests", Value: `${stats['Validation Tests'].passed}/${stats['Validation Tests'].total} Passed` },
-      { Metric: "Functional Tests", Value: `${stats['Functional Tests'].passed}/${stats['Functional Tests'].total} Passed` }
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'TaskLance Tests';
+    workbook.created = new Date();
+
+    // Summary Sheet
+    const summarySheet = workbook.addWorksheet('Summary Report');
+    summarySheet.columns = [
+      { header: 'Metric', key: 'metric', width: 30 },
+      { header: 'Value', key: 'value', width: 30 }
     ];
 
-    const summarySheet = xlsx.utils.json_to_sheet(summaryRows);
-    summarySheet['!cols'] = [{ wch: 30 }, { wch: 30 }];
-
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, summarySheet, "Summary Report");
+    summarySheet.addRows([
+      { metric: "Total Tests Run", value: totalTests },
+      { metric: "Passed Tests", value: passedTests },
+      { metric: "Failed Tests", value: failedTests },
+      { metric: "Pass Rate", value: `${passRate}%` },
+      { metric: "Deployable Status", value: isDeployable },
+      {},
+      { metric: "--- BREAKDOWN BY CATEGORY ---", value: "" },
+      { metric: "UI-UX & Unit Tests", value: `${stats['UI-UX & Unit Tests'].passed}/${stats['UI-UX & Unit Tests'].total} Passed` },
+      { metric: "Validation Tests", value: `${stats['Validation Tests'].passed}/${stats['Validation Tests'].total} Passed` },
+      { metric: "Functional Tests", value: `${stats['Functional Tests'].passed}/${stats['Functional Tests'].total} Passed` }
+    ]);
 
     // Create a sheet for each category
     for (const [catName, rows] of Object.entries(detailRowsByCategory)) {
       if (rows.length > 0) {
-        const sheet = xlsx.utils.json_to_sheet(rows);
-        sheet['!cols'] = [
-          { wch: 80 }, // Test Case Name
-          { wch: 15 }, // Status
-          { wch: 15 }  // Duration
+        const sheet = workbook.addWorksheet(catName);
+        sheet.columns = [
+          { header: 'Test Case Name', key: 'Test Case Name', width: 80 },
+          { header: 'Status', key: 'Status', width: 15 },
+          { header: 'Duration', key: 'Duration', width: 15 }
         ];
-        xlsx.utils.book_append_sheet(workbook, sheet, catName);
+        sheet.addRows(rows);
       }
     }
 
@@ -114,7 +116,7 @@ export default class ExcelReporter {
       fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     }
 
-    xlsx.writeFile(workbook, outputPath);
+    await workbook.xlsx.writeFile(outputPath);
     console.log(`\n📊 Excel Test Report generated at: ${outputPath}\n`);
     console.log(`Deployable Status: ${isDeployable}\n`);
   }
